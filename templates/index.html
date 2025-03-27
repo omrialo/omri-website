@@ -3,59 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omri's Website</title>
+    <title>Stock Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
+
         .header {
-            text-align: center;
-            padding: 4rem 0;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
         }
-        h1 {
-            font-size: 2.5rem;
-            color: #2c3e50;
+
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 600;
+        }
+
+        .add-stock-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"] {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            width: 200px;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stock-card {
+            background-color: var(--card-background);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
         }
-        .content {
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 2rem;
+
+        .stock-name {
+            font-weight: 600;
+            font-size: 1.125rem;
         }
-        .ai-badge {
+
+        .stock-price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stock-change {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
             display: inline-block;
-            background-color: #3498db;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
+        }
+
+        .change-positive {
+            background-color: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .change-negative {
+            background-color: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .stock-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
             margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        .last-updated {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+            text-align: right;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Welcome to Omri's Website</h1>
-    </div>
     <div class="container">
-        <div class="content">
-            <p>This website was developed with the assistance of AI, showcasing the power of artificial intelligence in web development. It's a simple yet modern example of how AI can help create clean, responsive websites.</p>
-            <div class="ai-badge">AI-Powered Development</div>
+        <div class="header">
+            <h1>Stock Tracker</h1>
+            <div class="add-stock-form">
+                <div class="input-group">
+                    <input type="text" id="tickerInput" placeholder="Enter stock ticker (e.g., AAPL)">
+                    <button class="btn-primary" onclick="addStock()">Add Stock</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stocks-grid" id="stocksGrid">
+            <!-- Stock cards will be added here dynamically -->
         </div>
     </div>
+
+    <script>
+        // Function to format numbers
+        function formatNumber(num) {
+            if (num === 'N/A') return 'N/A';
+            return new Intl.NumberFormat('en-US', {
+                style: 'decimal',
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        // Function to format currency
+        function formatCurrency(num) {
+            if (num === 'N/A') return 'N/A';
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(num);
+        }
+
+        // Function to format percentage
+        function formatPercentage(num) {
+            if (num === 'N/A') return 'N/A';
+            return `${num.toFixed(2)}%`;
+        }
+
+        // Function to create a stock card
+        function createStockCard(ticker, stock) {
+            const changeClass = stock.change >= 0 ? 'change-positive' : 'change-negative';
+            const changeSign = stock.change >= 0 ? '+' : '';
+            
+            return `
+                <div class="stock-card" id="stock-${ticker}">
+                    <div class="stock-header">
+                        <div class="stock-name">${stock.name}</div>
+                        <button class="btn-danger" onclick="removeStock('${ticker}')">Remove</button>
+                    </div>
+                    <div class="stock-price">${formatCurrency(stock.last_price)}</div>
+                    <div class="stock-change ${changeClass}">
+                        ${changeSign}${formatPercentage(stock.change)}
+                    </div>
+                    <div class="stock-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Volume</span>
+                            <span class="detail-value">${formatNumber(stock.volume)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Market Cap</span>
+                            <span class="detail-value">${formatCurrency(stock.market_cap)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">P/E Ratio</span>
+                            <span class="detail-value">${formatNumber(stock.pe_ratio)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Dividend Yield</span>
+                            <span class="detail-value">${formatPercentage(stock.dividend_yield)}</span>
+                        </div>
+                    </div>
+                    <div class="last-updated">Last updated: ${stock.last_updated}</div>
+                </div>
+            `;
+        }
+
+        // Function to update the stocks grid
+        function updateStocksGrid(stocks) {
+            const grid = document.getElementById('stocksGrid');
+            grid.innerHTML = '';
+            Object.entries(stocks).forEach(([ticker, stock]) => {
+                grid.innerHTML += createStockCard(ticker, stock);
+            });
+        }
+
+        // Function to add a stock
+        async function addStock() {
+            const tickerInput = document.getElementById('tickerInput');
+            const ticker = tickerInput.value.trim().toUpperCase();
+            
+            if (!ticker) {
+                alert('Please enter a stock ticker');
+                return;
+            }
+
+            try {
+                const response = await fetch('/add_stock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticker }),
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    tickerInput.value = '';
+                    updateStocksGrid({ ...window.stocks, [ticker]: data.stock });
+                    window.stocks = { ...window.stocks, [ticker]: data.stock };
+                } else {
+                    alert(data.error || 'Failed to add stock');
+                }
+            } catch (error) {
+                alert('Error adding stock');
+                console.error(error);
+            }
+        }
+
+        // Function to remove a stock
+        async function removeStock(ticker) {
+            try {
+                const response = await fetch('/remove_stock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticker }),
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    delete window.stocks[ticker];
+                    updateStocksGrid(window.stocks);
+                } else {
+                    alert(data.error || 'Failed to remove stock');
+                }
+            } catch (error) {
+                alert('Error removing stock');
+                console.error(error);
+            }
+        }
+
+        // Function to update stock data
+        async function updateStockData() {
+            try {
+                const response = await fetch('/update_stocks');
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.stocks = data.stocks;
+                    updateStocksGrid(window.stocks);
+                }
+            } catch (error) {
+                console.error('Error updating stock data:', error);
+            }
+        }
+
+        // Initialize stocks object
+        window.stocks = {{ stocks|tojson|safe }};
+
+        // Initial render
+        updateStocksGrid(window.stocks);
+
+        // Update stock data every 60 seconds
+        setInterval(updateStockData, 60000);
+    </script>
 </body>
 </html> 
