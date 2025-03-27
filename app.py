@@ -26,6 +26,15 @@ db.init_app(app)
 # Initialize Finnhub client
 finnhub_client = Finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
 
+def init_db():
+    with app.app_context():
+        # Create all tables
+        db.create_all()
+        logger.info("Database tables created successfully")
+
+# Initialize database tables
+init_db()
+
 def get_or_create_user(name):
     user = User.query.filter_by(name=name).first()
     if not user:
