@@ -189,6 +189,9 @@
     </div>
 
     <script>
+        // Test if JavaScript is running
+        alert('JavaScript is running!');
+        
         // Initialize stocks
         let stocks = {};
 
@@ -269,34 +272,62 @@
 
         // Function to add stock
         async function addStock() {
+            console.log('=== Starting addStock function ===');
             const input = document.getElementById('tickerInput');
             const ticker = input.value.trim().toUpperCase();
             
+            console.log('Ticker value:', ticker);
+            
             if (!ticker) {
+                console.log('No ticker provided');
                 alert('Please enter a stock symbol');
                 return;
             }
 
             try {
+                console.log('Preparing to send request to server...');
+                const requestData = { ticker };
+                console.log('Request data:', requestData);
+                
                 const response = await fetch('/add_stock', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ticker })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
                 });
 
-                const data = await response.json();
+                console.log('Response received:', response);
+                console.log('Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('Parsed response data:', data);
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    console.error('Failed to parse response:', responseText);
+                    alert('Server returned invalid data. Check console for details.');
+                    return;
+                }
                 
                 if (data.success) {
+                    console.log('Successfully added stock:', data.stock);
                     input.value = '';
                     stocks[ticker] = data.stock;
                     updateStocksList();
                     alert(`Added ${ticker} successfully!`);
                 } else {
+                    console.error('Server returned error:', data.error);
                     alert(data.error || 'Failed to add stock');
                 }
             } catch (error) {
-                alert('Error adding stock');
-                console.error(error);
+                console.error('Network or other error:', error);
+                alert('Error adding stock. Check console for details.');
             }
         }
 
@@ -348,6 +379,10 @@
 
         // Update stock data every 60 seconds
         setInterval(updateStockData, 60000);
+
+        // Add this at the end of your script section
+        console.log('=== Page loaded and initialized ===');
+        console.log('Initial stocks:', stocks);
     </script>
 </body>
 </html> 

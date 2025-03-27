@@ -23,8 +23,11 @@ def home():
 def add_stock():
     try:
         logger.info('Received add_stock request')
+        logger.info(f'Request headers: {dict(request.headers)}')
+        logger.info(f'Request data: {request.get_data()}')
+        
         data = request.get_json()
-        logger.info(f'Request data: {data}')
+        logger.info(f'Parsed JSON data: {data}')
         
         if not data:
             logger.error('No data provided in request')
@@ -57,6 +60,9 @@ def add_stock():
         
         logger.info(f'Successfully added stock: {ticker}')
         return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
+    except json.JSONDecodeError as e:
+        logger.error(f'JSON decode error: {str(e)}')
+        return jsonify({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         logger.error(f'Error adding stock: {str(e)}')
         return jsonify({'success': False, 'error': str(e)})
