@@ -17,7 +17,8 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///stocks.db')
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'stocks.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{db_path}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
@@ -28,9 +29,11 @@ finnhub_client = Finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
 
 def init_db():
     with app.app_context():
+        # Create data directory if it doesn't exist
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
         # Create all tables
         db.create_all()
-        logger.info("Database tables created successfully")
+        logger.info(f"Database initialized at: {db_path}")
 
 # Initialize database tables
 init_db()
