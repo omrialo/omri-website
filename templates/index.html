@@ -55,6 +55,29 @@
             color: var(--primary-color);
         }
 
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .login-form {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #userNameDisplay {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
         .add-stock-form {
             display: flex;
             gap: 1rem;
@@ -284,6 +307,23 @@
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-chart-line"></i> Stock Tracker</h1>
+            <div class="user-section">
+                <div id="loginForm" class="login-form">
+                    <input type="text" id="userName" class="search-input" placeholder="Enter your name">
+                    <button class="btn btn-primary" onclick="login()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </div>
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <span id="userNameDisplay"></span>
+                    <button class="btn btn-danger" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mainContent" style="display: none;">
             <div class="add-stock-form">
                 <div class="input-group">
                     <i class="fas fa-search search-icon"></i>
@@ -293,52 +333,52 @@
                     <i class="fas fa-plus"></i> Add Stock
                 </button>
             </div>
-        </div>
 
-        <div class="column-selector">
-            <select class="column-select" id="column1" onchange="updateColumns()">
-                <option value="market_cap">Market Cap</option>
-                <option value="volume">Volume</option>
-                <option value="pe_ratio">P/E Ratio</option>
-                <option value="dividend_yield">Dividend Yield</option>
-                <option value="news">Latest News</option>
-            </select>
-            <select class="column-select" id="column2" onchange="updateColumns()">
-                <option value="volume">Volume</option>
-                <option value="market_cap">Market Cap</option>
-                <option value="pe_ratio">P/E Ratio</option>
-                <option value="dividend_yield">Dividend Yield</option>
-                <option value="news">Latest News</option>
-            </select>
-            <select class="column-select" id="column3" onchange="updateColumns()">
-                <option value="pe_ratio">P/E Ratio</option>
-                <option value="market_cap">Market Cap</option>
-                <option value="volume">Volume</option>
-                <option value="dividend_yield">Dividend Yield</option>
-                <option value="news">Latest News</option>
-            </select>
-        </div>
-
-        <div class="stocks-table">
-            <div class="table-header">
-                <div class="table-header-cell">Stock Name</div>
-                <div class="table-header-cell">Price</div>
-                <div class="table-header-cell" id="header1">Market Cap</div>
-                <div class="table-header-cell" id="header2">Volume</div>
-                <div class="table-header-cell" id="header3">P/E Ratio</div>
+            <div class="column-selector">
+                <select class="column-select" id="column1" onchange="updateColumns()">
+                    <option value="market_cap">Market Cap</option>
+                    <option value="volume">Volume</option>
+                    <option value="pe_ratio">P/E Ratio</option>
+                    <option value="dividend_yield">Dividend Yield</option>
+                    <option value="news">Latest News</option>
+                </select>
+                <select class="column-select" id="column2" onchange="updateColumns()">
+                    <option value="volume">Volume</option>
+                    <option value="market_cap">Market Cap</option>
+                    <option value="pe_ratio">P/E Ratio</option>
+                    <option value="dividend_yield">Dividend Yield</option>
+                    <option value="news">Latest News</option>
+                </select>
+                <select class="column-select" id="column3" onchange="updateColumns()">
+                    <option value="pe_ratio">P/E Ratio</option>
+                    <option value="market_cap">Market Cap</option>
+                    <option value="volume">Volume</option>
+                    <option value="dividend_yield">Dividend Yield</option>
+                    <option value="news">Latest News</option>
+                </select>
             </div>
-            <div id="stocksList">
-                <!-- Stocks will be added here -->
-            </div>
-        </div>
 
-        <div id="emptyState" class="empty-state" style="display: none;">
-            <i class="fas fa-chart-bar"></i>
-            <h2>No Stocks Added Yet</h2>
-            <p>Start tracking your favorite stocks by adding them above</p>
-            <button class="btn btn-primary" onclick="document.getElementById('tickerInput').focus()">
-                <i class="fas fa-plus"></i> Add Your First Stock
-            </button>
+            <div class="stocks-table">
+                <div class="table-header">
+                    <div class="table-header-cell">Stock Name</div>
+                    <div class="table-header-cell">Price</div>
+                    <div class="table-header-cell" id="header1">Market Cap</div>
+                    <div class="table-header-cell" id="header2">Volume</div>
+                    <div class="table-header-cell" id="header3">P/E Ratio</div>
+                </div>
+                <div id="stocksList">
+                    <!-- Stocks will be added here -->
+                </div>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <h2>No Stocks Added Yet</h2>
+                <p>Start tracking your favorite stocks by adding them above</p>
+                <button class="btn btn-primary" onclick="document.getElementById('tickerInput').focus()">
+                    <i class="fas fa-plus"></i> Add Your First Stock
+                </button>
+            </div>
         </div>
     </div>
 
@@ -511,8 +551,100 @@
             }
         }
 
+        // Function to login
+        async function login() {
+            const nameInput = document.getElementById('userName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'flex';
+                    document.getElementById('userNameDisplay').textContent = `Welcome, ${data.user.name}!`;
+                    document.getElementById('mainContent').style.display = 'block';
+                    
+                    // Update stocks
+                    stocks = data.stocks;
+                    updateStocksList();
+                    
+                    // Show welcome achievement
+                    showAchievement({
+                        title: "Welcome Back!",
+                        description: `Welcome to your stock portfolio, ${data.user.name}!`,
+                        icon: "fa-handshake"
+                    });
+                } else {
+                    alert(data.error || 'Login failed');
+                }
+            } catch (error) {
+                alert('Error logging in');
+                console.error(error);
+            }
+        }
+
+        // Function to logout
+        async function logout() {
+            try {
+                const response = await fetch('/logout');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reset UI
+                    document.getElementById('loginForm').style.display = 'flex';
+                    document.getElementById('userInfo').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'none';
+                    document.getElementById('userName').value = '';
+                    
+                    // Clear stocks
+                    stocks = {};
+                    updateStocksList();
+                }
+            } catch (error) {
+                alert('Error logging out');
+                console.error(error);
+            }
+        }
+
+        // Function to update stock data
+        async function updateStockData() {
+            if (!document.getElementById('userInfo').style.display === 'flex') {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/update_stocks');
+                const data = await response.json();
+                
+                if (data.success) {
+                    stocks = data.stocks;
+                    updateStocksList();
+                }
+            } catch (error) {
+                console.error('Error updating stock data:', error);
+            }
+        }
+
         // Function to add stock
         async function addStock() {
+            if (!document.getElementById('userInfo').style.display === 'flex') {
+                alert('Please login first');
+                return;
+            }
+            
             const input = document.getElementById('tickerInput');
             const ticker = input.value.trim().toUpperCase();
             
@@ -561,6 +693,11 @@
 
         // Function to remove stock
         async function removeStock(ticker) {
+            if (!document.getElementById('userInfo').style.display === 'flex') {
+                alert('Please login first');
+                return;
+            }
+            
             try {
                 const response = await fetch('/remove_stock', {
                     method: 'POST',
@@ -583,21 +720,6 @@
             }
         }
 
-        // Function to update stock data
-        async function updateStockData() {
-            try {
-                const response = await fetch('/update_stocks');
-                const data = await response.json();
-                
-                if (data.success) {
-                    stocks = data.stocks;
-                    updateStocksList();
-                }
-            } catch (error) {
-                console.error('Error updating stock data:', error);
-            }
-        }
-
         // Add keyboard support
         document.getElementById('tickerInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -607,6 +729,14 @@
 
         // Update stock data every 60 seconds
         setInterval(updateStockData, 60000);
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            if (document.getElementById('userInfo').style.display === 'flex') {
+                updateStockData();
+            }
+        });
     </script>
 </body>
 </html> 

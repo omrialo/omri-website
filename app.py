@@ -1,12 +1,10 @@
-from flask import Flask, render_template, request, jsonify
-import finnhub
-import pandas as pd
-from datetime import datetime
-import json
-import logging
-import traceback
+from flask import Flask, render_template, request, jsonify, session
+from finnhub import client as Finnhub
 import os
 from dotenv import load_dotenv
+import logging
+from datetime import datetime
+from models import db, User, UserStock
 
 # Load environment variables
 load_dotenv()
@@ -16,145 +14,188 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Required for session management
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///stocks.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database
+db.init_app(app)
 
 # Initialize Finnhub client
-finnhub_client = finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
+finnhub_client = Finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
 
-# Store tracked stocks in memory (in a real app, this would be in a database)
-tracked_stocks = {}
+def get_or_create_user(name):
+    user = User.query.filter_by(name=name).first()
+    if not user:
+        user = User(name=name)
+        db.session.add(user)
+        db.session.commit()
+    return user
 
 @app.route('/')
 def home():
-    logger.info('Rendering home page')
-    return render_template('index.html', stocks=tracked_stocks)
+    logger.info("Home page accessed")
+    return render_template('index.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    name = data.get('name')
+    
+    if not name:
+        return jsonify({'success': False, 'error': 'Name is required'})
+    
+    user = get_or_create_user(name)
+    session['user_id'] = user.id
+    session['user_name'] = user.name
+    
+    # Get user's stocks
+    stocks = {}
+    for user_stock in user.stocks:
+        stocks[user_stock.ticker] = {
+            'name': user_stock.name,
+            'last_price': user_stock.last_price,
+            'change': user_stock.change,
+            'market_cap': user_stock.market_cap,
+            'volume': user_stock.volume,
+            'pe_ratio': user_stock.pe_ratio,
+            'dividend_yield': user_stock.dividend_yield
+        }
+    
+    return jsonify({
+        'success': True,
+        'user': {'name': user.name},
+        'stocks': stocks
+    })
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return jsonify({'success': True})
 
 @app.route('/add_stock', methods=['POST'])
 def add_stock():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Please login first'})
+    
+    data = request.get_json()
+    ticker = data.get('ticker')
+    
+    if not ticker:
+        return jsonify({'success': False, 'error': 'Ticker is required'})
+    
     try:
-        logger.info('=== Starting add_stock request ===')
-        logger.info(f'Request headers: {dict(request.headers)}')
-        logger.info(f'Request content type: {request.content_type}')
-        logger.info(f'Raw request data: {request.get_data(as_text=True)}')
+        # Get stock data from Finnhub
+        quote = finnhub_client.quote(ticker)
+        profile = finnhub_client.company_profile2(symbol=ticker)
         
-        if not request.is_json:
-            logger.error('Request is not JSON')
-            return jsonify({'success': False, 'error': 'Request must be JSON'})
-            
-        data = request.get_json()
-        logger.info(f'Parsed JSON data: {data}')
+        if not quote or not profile:
+            return jsonify({'success': False, 'error': 'No data found for this ticker'})
         
-        if not data:
-            logger.error('No data provided in request')
-            return jsonify({'success': False, 'error': 'No data provided'})
-            
-        ticker = data.get('ticker', '').upper()
-        if not ticker:
-            logger.error('No ticker provided')
-            return jsonify({'success': False, 'error': 'Ticker symbol is required'})
+        # Calculate change percentage
+        change = ((quote['c'] - quote['pc']) / quote['pc']) * 100
         
-        logger.info(f'Fetching data for ticker: {ticker}')
-        try:
-            # Get quote data
-            quote = finnhub_client.quote(ticker)
-            
-            if not quote or 'c' not in quote:
-                logger.error(f'No data found for ticker: {ticker}')
-                return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
-            
-            # Get company profile for additional info
-            profile = finnhub_client.company_profile2(symbol=ticker)
-            
-            # Calculate change percentage
-            current_price = quote['c']
-            previous_close = quote['pc']
-            change_percent = ((current_price - previous_close) / previous_close) * 100
-            
-            # Get basic stock information
-            tracked_stocks[ticker] = {
-                'name': profile.get('name', ticker) if profile else ticker,
-                'last_price': current_price,
-                'change': change_percent,
-                'volume': quote.get('v', 'N/A'),
-                'market_cap': profile.get('marketCapitalization', 'N/A') if profile else 'N/A',
-                'pe_ratio': profile.get('pe', 'N/A') if profile else 'N/A',
-                'dividend_yield': profile.get('dividendYield', 'N/A') if profile else 'N/A',
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            logger.info(f'Successfully added stock: {ticker}')
-            return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
-        except Exception as e:
-            logger.error(f'Error fetching stock data: {str(e)}')
-            logger.error(f'Traceback: {traceback.format_exc()}')
-            return jsonify({
-                'success': False, 
-                'error': f'Error fetching data for {ticker}. Please try again later or check if the ticker symbol is correct.'
-            })
-            
-    except json.JSONDecodeError as e:
-        logger.error(f'JSON decode error: {str(e)}')
-        logger.error(f'Traceback: {traceback.format_exc()}')
-        return jsonify({'success': False, 'error': 'Invalid JSON data'})
+        # Create stock data
+        stock_data = {
+            'name': profile.get('name', ticker),
+            'last_price': quote['c'],
+            'change': change,
+            'market_cap': profile.get('marketCapitalization', 0),
+            'volume': quote['v'],
+            'pe_ratio': profile.get('pe', 0),
+            'dividend_yield': profile.get('dividendYield', 0)
+        }
+        
+        # Save to database
+        user_stock = UserStock(
+            user_id=session['user_id'],
+            ticker=ticker,
+            **stock_data
+        )
+        db.session.add(user_stock)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'stock': stock_data
+        })
+        
     except Exception as e:
-        logger.error(f'Error adding stock: {str(e)}')
-        logger.error(f'Traceback: {traceback.format_exc()}')
+        logger.error(f"Error adding stock: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/remove_stock', methods=['POST'])
 def remove_stock():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Please login first'})
+    
+    data = request.get_json()
+    ticker = data.get('ticker')
+    
+    if not ticker:
+        return jsonify({'success': False, 'error': 'Ticker is required'})
+    
     try:
-        logger.info('Received remove_stock request')
-        data = request.get_json()
-        logger.info(f'Request data: {data}')
+        # Remove from database
+        UserStock.query.filter_by(
+            user_id=session['user_id'],
+            ticker=ticker
+        ).delete()
+        db.session.commit()
         
-        if not data:
-            logger.error('No data provided in request')
-            return jsonify({'success': False, 'error': 'No data provided'})
-            
-        ticker = data.get('ticker', '').upper()
-        if not ticker:
-            logger.error('No ticker provided')
-            return jsonify({'success': False, 'error': 'Ticker symbol is required'})
+        return jsonify({'success': True})
         
-        if ticker in tracked_stocks:
-            del tracked_stocks[ticker]
-            logger.info(f'Successfully removed stock: {ticker}')
-            return jsonify({'success': True})
-        logger.error(f'Stock not found: {ticker}')
-        return jsonify({'success': False, 'error': 'Stock not found'})
     except Exception as e:
-        logger.error(f'Error removing stock: {str(e)}')
+        logger.error(f"Error removing stock: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/update_stocks', methods=['GET'])
+@app.route('/update_stocks')
 def update_stocks():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Please login first'})
+    
     try:
-        logger.info('Updating all stocks')
-        for ticker in tracked_stocks:
-            try:
-                # Get quote data
-                quote = finnhub_client.quote(ticker)
-                
-                if quote and 'c' in quote:
-                    # Calculate change percentage
-                    current_price = quote['c']
-                    previous_close = quote['pc']
-                    change_percent = ((current_price - previous_close) / previous_close) * 100
-                    
-                    tracked_stocks[ticker].update({
-                        'last_price': current_price,
-                        'change': change_percent,
-                        'volume': quote.get('v', 'N/A'),
-                        'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    })
-                    logger.info(f'Updated stock: {ticker}')
-            except Exception as e:
-                logger.error(f'Error updating stock {ticker}: {str(e)}')
+        user = User.query.get(session['user_id'])
+        stocks = {}
         
-        return jsonify({'success': True, 'stocks': tracked_stocks})
+        for user_stock in user.stocks:
+            # Get updated data from Finnhub
+            quote = finnhub_client.quote(user_stock.ticker)
+            profile = finnhub_client.company_profile2(symbol=user_stock.ticker)
+            
+            if quote and profile:
+                # Calculate change percentage
+                change = ((quote['c'] - quote['pc']) / quote['pc']) * 100
+                
+                # Update database
+                user_stock.last_price = quote['c']
+                user_stock.change = change
+                user_stock.market_cap = profile.get('marketCapitalization', 0)
+                user_stock.volume = quote['v']
+                user_stock.pe_ratio = profile.get('pe', 0)
+                user_stock.dividend_yield = profile.get('dividendYield', 0)
+                
+                # Add to response
+                stocks[user_stock.ticker] = {
+                    'name': user_stock.name,
+                    'last_price': user_stock.last_price,
+                    'change': user_stock.change,
+                    'market_cap': user_stock.market_cap,
+                    'volume': user_stock.volume,
+                    'pe_ratio': user_stock.pe_ratio,
+                    'dividend_yield': user_stock.dividend_yield
+                }
+        
+        db.session.commit()
+        return jsonify({'success': True, 'stocks': stocks})
+        
     except Exception as e:
-        logger.error(f'Error updating stocks: {str(e)}')
+        logger.error(f"Error updating stocks: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True) 
