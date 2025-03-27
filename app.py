@@ -1,16 +1,24 @@
 from flask import Flask, render_template, request, jsonify
-import yfinance as yf
+import finnhub
 import pandas as pd
 from datetime import datetime
 import json
 import logging
 import traceback
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Initialize Finnhub client
+finnhub_client = finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
 
 # Store tracked stocks in memory (in a real app, this would be in a database)
 tracked_stocks = {}
@@ -46,27 +54,30 @@ def add_stock():
         
         logger.info(f'Fetching data for ticker: {ticker}')
         try:
-            # Download the stock data
-            df = yf.download(ticker, period='1d', progress=False)
+            # Get quote data
+            quote = finnhub_client.quote(ticker)
             
-            if df.empty:
+            if not quote or 'c' not in quote:
                 logger.error(f'No data found for ticker: {ticker}')
                 return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
             
-            # Calculate the change percentage
-            current_price = df['Close'].iloc[-1]
-            open_price = df['Open'].iloc[0]
-            change_percent = ((current_price - open_price) / open_price) * 100
+            # Get company profile for additional info
+            profile = finnhub_client.company_profile2(symbol=ticker)
+            
+            # Calculate change percentage
+            current_price = quote['c']
+            previous_close = quote['pc']
+            change_percent = ((current_price - previous_close) / previous_close) * 100
             
             # Get basic stock information
             tracked_stocks[ticker] = {
-                'name': ticker,
+                'name': profile.get('name', ticker) if profile else ticker,
                 'last_price': current_price,
                 'change': change_percent,
-                'volume': df['Volume'].iloc[-1],
-                'market_cap': 'N/A',
-                'pe_ratio': 'N/A',
-                'dividend_yield': 'N/A',
+                'volume': quote.get('v', 'N/A'),
+                'market_cap': profile.get('marketCapitalization', 'N/A') if profile else 'N/A',
+                'pe_ratio': profile.get('pe', 'N/A') if profile else 'N/A',
+                'dividend_yield': profile.get('dividendYield', 'N/A') if profile else 'N/A',
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             
@@ -121,16 +132,22 @@ def update_stocks():
         logger.info('Updating all stocks')
         for ticker in tracked_stocks:
             try:
-                stock = yf.Ticker(ticker)
-                info = stock.info
+                # Get quote data
+                quote = finnhub_client.quote(ticker)
                 
-                tracked_stocks[ticker].update({
-                    'last_price': info.get('regularMarketPrice', 'N/A'),
-                    'change': info.get('regularMarketChangePercent', 'N/A'),
-                    'volume': info.get('regularMarketVolume', 'N/A'),
-                    'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
-                logger.info(f'Updated stock: {ticker}')
+                if quote and 'c' in quote:
+                    # Calculate change percentage
+                    current_price = quote['c']
+                    previous_close = quote['pc']
+                    change_percent = ((current_price - previous_close) / previous_close) * 100
+                    
+                    tracked_stocks[ticker].update({
+                        'last_price': current_price,
+                        'change': change_percent,
+                        'volume': quote.get('v', 'N/A'),
+                        'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    logger.info(f'Updated stock: {ticker}')
             except Exception as e:
                 logger.error(f'Error updating stock {ticker}: {str(e)}')
         
