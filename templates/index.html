@@ -5,20 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #0073ea;
-            --success-color: #00ca72;
-            --danger-color: #e44258;
-            --background-color: #f6f7fb;
-            --card-background: #ffffff;
-            --text-primary: #323338;
-            --text-secondary: #676879;
-            --border-color: #e6e9ef;
-            --hover-color: #f5f6f8;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -27,471 +14,188 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-primary);
+            background: #f0f2f5;
+            color: #1a1a1a;
             line-height: 1.5;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1rem;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            background: var(--card-background);
-            padding: 1.5rem;
+            background: white;
+            padding: 1rem;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .header h1 {
-            font-size: 1.875rem;
-            font-weight: 600;
-            color: var(--primary-color);
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a73e8;
         }
 
-        .add-stock-form {
+        .search-box {
             display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .input-group {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .search-input {
-            padding: 0.75rem 1rem;
-            padding-left: 2.5rem;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 0.875rem;
-            width: 300px;
-            transition: all 0.2s;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 115, 234, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
             gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
+        input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #1a73e8;
             color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
-        .btn-primary:hover {
-            background-color: #0065d1;
+        button:hover {
+            background: #1557b0;
         }
 
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #d13a4e;
-        }
-
-        .stocks-grid {
+        .stocks-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
         }
 
         .stock-card {
-            background-color: var(--card-background);
+            background: white;
+            padding: 1rem;
             border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stock-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .stock-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .stock-name {
             font-weight: 600;
-            font-size: 1.125rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 1.1rem;
         }
 
         .stock-price {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .stock-change {
-            font-size: 0.875rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
             font-weight: 500;
         }
 
-        .change-positive {
-            background-color: #e3fcef;
-            color: var(--success-color);
+        .change-up {
+            background: #e6f4ea;
+            color: #137333;
         }
 
-        .change-negative {
-            background-color: #fde8e8;
-            color: var(--danger-color);
+        .change-down {
+            background: #fce8e6;
+            color: #c5221f;
         }
 
-        .stock-details {
+        .stock-info {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .detail-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-        }
-
-        .detail-value {
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-
-        .last-updated {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 1rem;
-            text-align: right;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
             gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
         }
 
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            background-color: var(--card-background);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
+        .info-item {
+            font-size: 0.9rem;
         }
 
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
+        .info-label {
+            color: #666;
+            font-size: 0.8rem;
         }
 
-        .toast.success {
-            border-left: 4px solid var(--success-color);
+        .remove-btn {
+            background: #dc3545;
         }
 
-        .toast.error {
-            border-left: 4px solid var(--danger-color);
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .loading-overlay.show {
-            opacity: 1;
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .remove-btn:hover {
+            background: #c82333;
         }
 
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
-            background-color: var(--card-background);
-            border-radius: 8px;
-            margin-top: 2rem;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-primary);
-        }
-
-        .empty-state p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-        }
-
-        .achievement-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--card-background);
             padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            text-align: center;
-            z-index: 1001;
-            opacity: 0;
-            transition: all 0.3s;
+            background: white;
+            border-radius: 8px;
+            margin-top: 1rem;
         }
 
-        .achievement-popup.show {
-            opacity: 1;
-        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 0.5rem;
+            }
 
-        .achievement-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-        }
+            .search-box {
+                flex-direction: column;
+            }
 
-        .achievement-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
+            button {
+                width: 100%;
+            }
 
-        .achievement-description {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-        }
-
-        .achievement-progress {
-            width: 100%;
-            height: 4px;
-            background-color: var(--border-color);
-            border-radius: 2px;
-            margin-bottom: 1rem;
-        }
-
-        .achievement-progress-bar {
-            height: 100%;
-            background-color: var(--primary-color);
-            border-radius: 2px;
-            transition: width 0.3s;
+            .stocks-list {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-chart-line"></i> Stock Tracker</h1>
-            <div class="add-stock-form">
-                <div class="input-group">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="tickerInput" class="search-input" placeholder="Search for a stock (e.g., AAPL)">
-                </div>
-                <button class="btn btn-primary" onclick="addStock()">
-                    <i class="fas fa-plus"></i> Add Stock
-                </button>
+            <h1>Stock Tracker</h1>
+            <div class="search-box">
+                <input type="text" id="tickerInput" placeholder="Enter stock symbol (e.g., AAPL)">
+                <button onclick="addStock()">Add Stock</button>
             </div>
         </div>
 
-        <div class="stocks-grid" id="stocksGrid">
-            <!-- Stock cards will be added here dynamically -->
+        <div id="stocksList" class="stocks-list">
+            <!-- Stocks will be added here -->
         </div>
 
         <div id="emptyState" class="empty-state" style="display: none;">
-            <i class="fas fa-chart-bar"></i>
-            <h2>No Stocks Added Yet</h2>
-            <p>Start tracking your favorite stocks by adding them above</p>
-            <button class="btn btn-primary" onclick="document.getElementById('tickerInput').focus()">
-                <i class="fas fa-plus"></i> Add Your First Stock
-            </button>
+            <p>No stocks added yet. Add your first stock above!</p>
         </div>
-    </div>
-
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
-
-    <div id="toast" class="toast"></div>
-
-    <div id="achievementPopup" class="achievement-popup">
-        <div class="achievement-icon">
-            <i class="fas fa-trophy"></i>
-        </div>
-        <div class="achievement-title">Achievement Unlocked!</div>
-        <div class="achievement-description"></div>
-        <div class="achievement-progress">
-            <div class="achievement-progress-bar"></div>
-        </div>
-        <button class="btn btn-primary" onclick="closeAchievement()">Continue</button>
     </div>
 
     <script>
-        // Achievement system
-        const achievements = {
-            firstStock: {
-                title: "First Stock Added!",
-                description: "You've added your first stock to track",
-                icon: "fa-star"
-            },
-            fiveStocks: {
-                title: "Stock Master",
-                description: "You're tracking 5 stocks!",
-                icon: "fa-chart-line"
-            },
-            tenStocks: {
-                title: "Stock Expert",
-                description: "You're tracking 10 stocks!",
-                icon: "fa-crown"
-            }
-        };
-
-        let currentAchievement = null;
-        
-        // Initialize stocks from Flask template
-        const initialStocks = {{ stocks|tojson|safe }};
-        let stocks = initialStocks || {};
-
-        // Debug log
-        console.log('Initial stocks:', stocks);
-
-        function showAchievement(achievement) {
-            const popup = document.getElementById('achievementPopup');
-            const icon = popup.querySelector('.achievement-icon i');
-            const title = popup.querySelector('.achievement-title');
-            const description = popup.querySelector('.achievement-description');
-            const progressBar = popup.querySelector('.achievement-progress-bar');
-
-            icon.className = `fas ${achievement.icon}`;
-            title.textContent = achievement.title;
-            description.textContent = achievement.description;
-            progressBar.style.width = '100%';
-
-            popup.classList.add('show');
-            currentAchievement = achievement;
-
-            setTimeout(() => {
-                closeAchievement();
-            }, 5000);
-        }
-
-        function closeAchievement() {
-            const popup = document.getElementById('achievementPopup');
-            popup.classList.remove('show');
-            currentAchievement = null;
-        }
-
-        // Toast notifications
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type}`;
-            toast.classList.add('show');
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Loading overlay
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.add('show');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.remove('show');
-        }
+        // Initialize stocks
+        let stocks = {};
 
         // Function to format numbers
         function formatNumber(num) {
             if (num === 'N/A') return 'N/A';
-            return new Intl.NumberFormat('en-US', {
-                style: 'decimal',
-                maximumFractionDigits: 2
-            }).format(num);
+            return new Intl.NumberFormat('en-US').format(num);
         }
 
         // Function to format currency
@@ -509,178 +213,131 @@
             return `${num.toFixed(2)}%`;
         }
 
-        // Function to create a stock card
+        // Function to create stock card
         function createStockCard(ticker, stock) {
-            const changeClass = stock.change >= 0 ? 'change-positive' : 'change-negative';
+            const changeClass = stock.change >= 0 ? 'change-up' : 'change-down';
             const changeSign = stock.change >= 0 ? '+' : '';
-            const changeIcon = stock.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
             
             return `
                 <div class="stock-card" id="stock-${ticker}">
                     <div class="stock-header">
-                        <div class="stock-name">
-                            <i class="fas fa-chart-line"></i>
-                            ${stock.name}
-                        </div>
-                        <button class="btn btn-danger" onclick="removeStock('${ticker}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="stock-name">${stock.name}</div>
+                        <button class="remove-btn" onclick="removeStock('${ticker}')">Remove</button>
                     </div>
-                    <div class="stock-price">
-                        ${formatCurrency(stock.last_price)}
-                        <div class="stock-change ${changeClass}">
-                            <i class="fas ${changeIcon}"></i>
-                            ${changeSign}${formatPercentage(stock.change)}
-                        </div>
+                    <div class="stock-price">${formatCurrency(stock.last_price)}</div>
+                    <div class="stock-change ${changeClass}">
+                        ${changeSign}${formatPercentage(stock.change)}
                     </div>
-                    <div class="stock-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Volume</span>
-                            <span class="detail-value">${formatNumber(stock.volume)}</span>
+                    <div class="stock-info">
+                        <div class="info-item">
+                            <div class="info-label">Volume</div>
+                            <div>${formatNumber(stock.volume)}</div>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Market Cap</span>
-                            <span class="detail-value">${formatCurrency(stock.market_cap)}</span>
+                        <div class="info-item">
+                            <div class="info-label">Market Cap</div>
+                            <div>${formatCurrency(stock.market_cap)}</div>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">P/E Ratio</span>
-                            <span class="detail-value">${formatNumber(stock.pe_ratio)}</span>
+                        <div class="info-item">
+                            <div class="info-label">P/E Ratio</div>
+                            <div>${formatNumber(stock.pe_ratio)}</div>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Dividend Yield</span>
-                            <span class="detail-value">${formatPercentage(stock.dividend_yield)}</span>
+                        <div class="info-item">
+                            <div class="info-label">Dividend Yield</div>
+                            <div>${formatPercentage(stock.dividend_yield)}</div>
                         </div>
-                    </div>
-                    <div class="last-updated">
-                        <i class="fas fa-clock"></i>
-                        Last updated: ${stock.last_updated}
                     </div>
                 </div>
             `;
         }
 
-        // Function to update the stocks grid
-        function updateStocksGrid(stocks) {
-            const grid = document.getElementById('stocksGrid');
+        // Function to update stocks list
+        function updateStocksList() {
+            const list = document.getElementById('stocksList');
             const emptyState = document.getElementById('emptyState');
             
             if (Object.keys(stocks).length === 0) {
-                grid.style.display = 'none';
+                list.style.display = 'none';
                 emptyState.style.display = 'block';
             } else {
-                grid.style.display = 'grid';
+                list.style.display = 'grid';
                 emptyState.style.display = 'none';
-                grid.innerHTML = '';
-                Object.entries(stocks).forEach(([ticker, stock]) => {
-                    grid.innerHTML += createStockCard(ticker, stock);
-                });
+                list.innerHTML = Object.entries(stocks)
+                    .map(([ticker, stock]) => createStockCard(ticker, stock))
+                    .join('');
             }
         }
 
-        // Function to add a stock
+        // Function to add stock
         async function addStock() {
-            const tickerInput = document.getElementById('tickerInput');
-            const ticker = tickerInput.value.trim().toUpperCase();
+            const input = document.getElementById('tickerInput');
+            const ticker = input.value.trim().toUpperCase();
             
             if (!ticker) {
-                showToast('Please enter a stock ticker', 'error');
+                alert('Please enter a stock symbol');
                 return;
             }
 
-            showLoading();
             try {
-                console.log('Adding stock:', ticker);
                 const response = await fetch('/add_stock', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ ticker }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker })
                 });
 
                 const data = await response.json();
-                console.log('Server response:', data);
                 
                 if (data.success) {
-                    tickerInput.value = '';
+                    input.value = '';
                     stocks[ticker] = data.stock;
-                    updateStocksGrid(stocks);
-                    
-                    // Check achievements
-                    const stockCount = Object.keys(stocks).length;
-                    if (stockCount === 1) {
-                        showAchievement(achievements.firstStock);
-                    } else if (stockCount === 5) {
-                        showAchievement(achievements.fiveStocks);
-                    } else if (stockCount === 10) {
-                        showAchievement(achievements.tenStocks);
-                    }
-                    
-                    showToast(`Successfully added ${ticker}`);
+                    updateStocksList();
+                    alert(`Added ${ticker} successfully!`);
                 } else {
-                    showToast(data.error || 'Failed to add stock', 'error');
+                    alert(data.error || 'Failed to add stock');
                 }
             } catch (error) {
-                console.error('Error adding stock:', error);
-                showToast('Error adding stock', 'error');
-            } finally {
-                hideLoading();
+                alert('Error adding stock');
+                console.error(error);
             }
         }
 
-        // Function to remove a stock
+        // Function to remove stock
         async function removeStock(ticker) {
-            showLoading();
             try {
-                console.log('Removing stock:', ticker);
                 const response = await fetch('/remove_stock', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ ticker }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker })
                 });
 
                 const data = await response.json();
-                console.log('Server response:', data);
                 
                 if (data.success) {
                     delete stocks[ticker];
-                    updateStocksGrid(stocks);
-                    showToast(`Removed ${ticker}`);
+                    updateStocksList();
+                    alert(`Removed ${ticker}`);
                 } else {
-                    showToast(data.error || 'Failed to remove stock', 'error');
+                    alert(data.error || 'Failed to remove stock');
                 }
             } catch (error) {
-                console.error('Error removing stock:', error);
-                showToast('Error removing stock', 'error');
-            } finally {
-                hideLoading();
+                alert('Error removing stock');
+                console.error(error);
             }
         }
 
         // Function to update stock data
         async function updateStockData() {
             try {
-                console.log('Updating stock data...');
                 const response = await fetch('/update_stocks');
                 const data = await response.json();
-                console.log('Update response:', data);
                 
                 if (data.success) {
                     stocks = data.stocks;
-                    updateStocksGrid(stocks);
+                    updateStocksList();
                 }
             } catch (error) {
                 console.error('Error updating stock data:', error);
             }
         }
-
-        // Initial render
-        updateStocksGrid(stocks);
-
-        // Update stock data every 60 seconds
-        setInterval(updateStockData, 60000);
 
         // Add keyboard support
         document.getElementById('tickerInput').addEventListener('keypress', function(e) {
@@ -688,6 +345,9 @@
                 addStock();
             }
         });
+
+        // Update stock data every 60 seconds
+        setInterval(updateStockData, 60000);
     </script>
 </body>
 </html> 
