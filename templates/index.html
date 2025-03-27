@@ -286,19 +286,18 @@
 
             try {
                 console.log('Preparing to send request to server...');
-                // Create a properly formatted JSON object
-                const requestData = JSON.stringify({
+                // Send the data as a plain object, let fetch handle the JSON stringification
+                const requestData = {
                     ticker: ticker
-                });
+                };
                 console.log('Request data:', requestData);
                 
                 const response = await fetch('/add_stock', {
                     method: 'POST',
                     headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Content-Type': 'application/json'
                     },
-                    body: requestData
+                    body: JSON.stringify(requestData)
                 });
 
                 console.log('Response received:', response);
