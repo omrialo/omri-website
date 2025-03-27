@@ -46,40 +46,27 @@ def add_stock():
         
         logger.info(f'Fetching data for ticker: {ticker}')
         try:
-            # Create Ticker object
-            stock = yf.Ticker(ticker)
+            # Download the stock data
+            df = yf.download(ticker, period='1d', progress=False)
             
-            # Get the stock info with a timeout
-            info = stock.info
+            if df.empty:
+                logger.error(f'No data found for ticker: {ticker}')
+                return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
             
-            # If no info is available, try getting the history as a fallback
-            if not info:
-                logger.info(f'No info found, trying history for ticker: {ticker}')
-                history = stock.history(period='1d')
-                if history.empty:
-                    logger.error(f'No data found for ticker: {ticker}')
-                    return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
-                
-                # Create info from history data
-                info = {
-                    'longName': ticker,
-                    'regularMarketPrice': history['Close'].iloc[-1],
-                    'regularMarketChangePercent': ((history['Close'].iloc[-1] - history['Open'].iloc[0]) / history['Open'].iloc[0]) * 100,
-                    'regularMarketVolume': history['Volume'].iloc[-1],
-                    'marketCap': 'N/A',
-                    'forwardPE': 'N/A',
-                    'dividendYield': 'N/A'
-                }
+            # Calculate the change percentage
+            current_price = df['Close'].iloc[-1]
+            open_price = df['Open'].iloc[0]
+            change_percent = ((current_price - open_price) / open_price) * 100
             
             # Get basic stock information
             tracked_stocks[ticker] = {
-                'name': info.get('longName', ticker),
-                'last_price': info.get('regularMarketPrice', 'N/A'),
-                'change': info.get('regularMarketChangePercent', 'N/A'),
-                'volume': info.get('regularMarketVolume', 'N/A'),
-                'market_cap': info.get('marketCap', 'N/A'),
-                'pe_ratio': info.get('forwardPE', 'N/A'),
-                'dividend_yield': info.get('dividendYield', 'N/A'),
+                'name': ticker,
+                'last_price': current_price,
+                'change': change_percent,
+                'volume': df['Volume'].iloc[-1],
+                'market_cap': 'N/A',
+                'pe_ratio': 'N/A',
+                'dividend_yield': 'N/A',
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             
