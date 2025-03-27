@@ -430,6 +430,18 @@
         };
 
         let currentAchievement = null;
+        let stocks = {};
+
+        // Initialize stocks from Flask template
+        try {
+            const stocksData = {{ stocks|tojson|safe }};
+            if (stocksData) {
+                stocks = stocksData;
+                console.log('Initial stocks:', stocks);
+            }
+        } catch (error) {
+            console.error('Error initializing stocks:', error);
+        }
 
         function showAchievement(achievement) {
             const popup = document.getElementById('achievementPopup');
@@ -582,6 +594,7 @@
 
             showLoading();
             try {
+                console.log('Adding stock:', ticker);
                 const response = await fetch('/add_stock', {
                     method: 'POST',
                     headers: {
@@ -591,15 +604,15 @@
                 });
 
                 const data = await response.json();
+                console.log('Server response:', data);
                 
                 if (data.success) {
                     tickerInput.value = '';
-                    const newStocks = { ...window.stocks, [ticker]: data.stock };
-                    window.stocks = newStocks;
-                    updateStocksGrid(newStocks);
+                    stocks[ticker] = data.stock;
+                    updateStocksGrid(stocks);
                     
                     // Check achievements
-                    const stockCount = Object.keys(newStocks).length;
+                    const stockCount = Object.keys(stocks).length;
                     if (stockCount === 1) {
                         showAchievement(achievements.firstStock);
                     } else if (stockCount === 5) {
@@ -613,8 +626,8 @@
                     showToast(data.error || 'Failed to add stock', 'error');
                 }
             } catch (error) {
+                console.error('Error adding stock:', error);
                 showToast('Error adding stock', 'error');
-                console.error(error);
             } finally {
                 hideLoading();
             }
@@ -624,6 +637,7 @@
         async function removeStock(ticker) {
             showLoading();
             try {
+                console.log('Removing stock:', ticker);
                 const response = await fetch('/remove_stock', {
                     method: 'POST',
                     headers: {
@@ -633,17 +647,18 @@
                 });
 
                 const data = await response.json();
+                console.log('Server response:', data);
                 
                 if (data.success) {
-                    delete window.stocks[ticker];
-                    updateStocksGrid(window.stocks);
+                    delete stocks[ticker];
+                    updateStocksGrid(stocks);
                     showToast(`Removed ${ticker}`);
                 } else {
                     showToast(data.error || 'Failed to remove stock', 'error');
                 }
             } catch (error) {
+                console.error('Error removing stock:', error);
                 showToast('Error removing stock', 'error');
-                console.error(error);
             } finally {
                 hideLoading();
             }
@@ -652,23 +667,22 @@
         // Function to update stock data
         async function updateStockData() {
             try {
+                console.log('Updating stock data...');
                 const response = await fetch('/update_stocks');
                 const data = await response.json();
+                console.log('Update response:', data);
                 
                 if (data.success) {
-                    window.stocks = data.stocks;
-                    updateStocksGrid(window.stocks);
+                    stocks = data.stocks;
+                    updateStocksGrid(stocks);
                 }
             } catch (error) {
                 console.error('Error updating stock data:', error);
             }
         }
 
-        // Initialize stocks object
-        window.stocks = {{ stocks|tojson|safe }};
-
         // Initial render
-        updateStocksGrid(window.stocks);
+        updateStocksGrid(stocks);
 
         // Update stock data every 60 seconds
         setInterval(updateStockData, 60000);
