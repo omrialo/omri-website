@@ -45,27 +45,54 @@ def add_stock():
             return jsonify({'success': False, 'error': 'Ticker symbol is required'})
         
         logger.info(f'Fetching data for ticker: {ticker}')
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        
-        if not info:
-            logger.error(f'No data found for ticker: {ticker}')
-            return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
-        
-        # Get basic stock information
-        tracked_stocks[ticker] = {
-            'name': info.get('longName', ticker),
-            'last_price': info.get('regularMarketPrice', 'N/A'),
-            'change': info.get('regularMarketChangePercent', 'N/A'),
-            'volume': info.get('regularMarketVolume', 'N/A'),
-            'market_cap': info.get('marketCap', 'N/A'),
-            'pe_ratio': info.get('forwardPE', 'N/A'),
-            'dividend_yield': info.get('dividendYield', 'N/A'),
-            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        
-        logger.info(f'Successfully added stock: {ticker}')
-        return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
+        try:
+            # Create Ticker object
+            stock = yf.Ticker(ticker)
+            
+            # Get the stock info with a timeout
+            info = stock.info
+            
+            # If no info is available, try getting the history as a fallback
+            if not info:
+                logger.info(f'No info found, trying history for ticker: {ticker}')
+                history = stock.history(period='1d')
+                if history.empty:
+                    logger.error(f'No data found for ticker: {ticker}')
+                    return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
+                
+                # Create info from history data
+                info = {
+                    'longName': ticker,
+                    'regularMarketPrice': history['Close'].iloc[-1],
+                    'regularMarketChangePercent': ((history['Close'].iloc[-1] - history['Open'].iloc[0]) / history['Open'].iloc[0]) * 100,
+                    'regularMarketVolume': history['Volume'].iloc[-1],
+                    'marketCap': 'N/A',
+                    'forwardPE': 'N/A',
+                    'dividendYield': 'N/A'
+                }
+            
+            # Get basic stock information
+            tracked_stocks[ticker] = {
+                'name': info.get('longName', ticker),
+                'last_price': info.get('regularMarketPrice', 'N/A'),
+                'change': info.get('regularMarketChangePercent', 'N/A'),
+                'volume': info.get('regularMarketVolume', 'N/A'),
+                'market_cap': info.get('marketCap', 'N/A'),
+                'pe_ratio': info.get('forwardPE', 'N/A'),
+                'dividend_yield': info.get('dividendYield', 'N/A'),
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            logger.info(f'Successfully added stock: {ticker}')
+            return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
+        except Exception as e:
+            logger.error(f'Error fetching stock data: {str(e)}')
+            logger.error(f'Traceback: {traceback.format_exc()}')
+            return jsonify({
+                'success': False, 
+                'error': f'Error fetching data for {ticker}. Please try again later or check if the ticker symbol is correct.'
+            })
+            
     except json.JSONDecodeError as e:
         logger.error(f'JSON decode error: {str(e)}')
         logger.error(f'Traceback: {traceback.format_exc()}')
