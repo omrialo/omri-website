@@ -430,18 +430,13 @@
         };
 
         let currentAchievement = null;
-        let stocks = {};
-
+        
         // Initialize stocks from Flask template
-        try {
-            const stocksData = {{ stocks|tojson|safe }};
-            if (stocksData) {
-                stocks = stocksData;
-                console.log('Initial stocks:', stocks);
-            }
-        } catch (error) {
-            console.error('Error initializing stocks:', error);
-        }
+        const initialStocks = {{ stocks|tojson|safe }};
+        let stocks = initialStocks || {};
+
+        // Debug log
+        console.log('Initial stocks:', stocks);
 
         function showAchievement(achievement) {
             const popup = document.getElementById('achievementPopup');

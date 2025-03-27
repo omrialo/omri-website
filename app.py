@@ -3,6 +3,11 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -11,23 +16,31 @@ tracked_stocks = {}
 
 @app.route('/')
 def home():
+    logger.info('Rendering home page')
     return render_template('index.html', stocks=tracked_stocks)
 
 @app.route('/add_stock', methods=['POST'])
 def add_stock():
     try:
+        logger.info('Received add_stock request')
         data = request.get_json()
+        logger.info(f'Request data: {data}')
+        
         if not data:
+            logger.error('No data provided in request')
             return jsonify({'success': False, 'error': 'No data provided'})
             
         ticker = data.get('ticker', '').upper()
         if not ticker:
+            logger.error('No ticker provided')
             return jsonify({'success': False, 'error': 'Ticker symbol is required'})
         
+        logger.info(f'Fetching data for ticker: {ticker}')
         stock = yf.Ticker(ticker)
         info = stock.info
         
         if not info:
+            logger.error(f'No data found for ticker: {ticker}')
             return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
         
         # Get basic stock information
@@ -42,44 +55,60 @@ def add_stock():
             'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         
+        logger.info(f'Successfully added stock: {ticker}')
         return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
     except Exception as e:
+        logger.error(f'Error adding stock: {str(e)}')
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/remove_stock', methods=['POST'])
 def remove_stock():
     try:
+        logger.info('Received remove_stock request')
         data = request.get_json()
+        logger.info(f'Request data: {data}')
+        
         if not data:
+            logger.error('No data provided in request')
             return jsonify({'success': False, 'error': 'No data provided'})
             
         ticker = data.get('ticker', '').upper()
         if not ticker:
+            logger.error('No ticker provided')
             return jsonify({'success': False, 'error': 'Ticker symbol is required'})
         
         if ticker in tracked_stocks:
             del tracked_stocks[ticker]
+            logger.info(f'Successfully removed stock: {ticker}')
             return jsonify({'success': True})
+        logger.error(f'Stock not found: {ticker}')
         return jsonify({'success': False, 'error': 'Stock not found'})
     except Exception as e:
+        logger.error(f'Error removing stock: {str(e)}')
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/update_stocks', methods=['GET'])
 def update_stocks():
     try:
+        logger.info('Updating all stocks')
         for ticker in tracked_stocks:
-            stock = yf.Ticker(ticker)
-            info = stock.info
-            
-            tracked_stocks[ticker].update({
-                'last_price': info.get('regularMarketPrice', 'N/A'),
-                'change': info.get('regularMarketChangePercent', 'N/A'),
-                'volume': info.get('regularMarketVolume', 'N/A'),
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
+            try:
+                stock = yf.Ticker(ticker)
+                info = stock.info
+                
+                tracked_stocks[ticker].update({
+                    'last_price': info.get('regularMarketPrice', 'N/A'),
+                    'change': info.get('regularMarketChangePercent', 'N/A'),
+                    'volume': info.get('regularMarketVolume', 'N/A'),
+                    'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                logger.info(f'Updated stock: {ticker}')
+            except Exception as e:
+                logger.error(f'Error updating stock {ticker}: {str(e)}')
         
         return jsonify({'success': True, 'stocks': tracked_stocks})
     except Exception as e:
+        logger.error(f'Error updating stocks: {str(e)}')
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
