@@ -683,11 +683,12 @@
                     
                     alert(`Added ${ticker} successfully!`);
                 } else {
-                    alert(data.error || 'Failed to add stock');
+                    alert(data.error || 'Failed to add stock. Please try again.');
+                    console.error('Server error:', data.error);
                 }
             } catch (error) {
-                alert('Error adding stock');
-                console.error(error);
+                alert('Error adding stock. Please try again.');
+                console.error('Network error:', error);
             }
         }
 

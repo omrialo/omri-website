@@ -103,19 +103,28 @@ def add_stock():
         quote = finnhub_client.quote(ticker)
         profile = finnhub_client.company_profile2(symbol=ticker)
         
-        if not quote or not profile:
-            return jsonify({'success': False, 'error': 'No data found for this ticker'})
+        logger.info(f"Finnhub API Response - Quote: {quote}")
+        logger.info(f"Finnhub API Response - Profile: {profile}")
+        
+        if not quote:
+            return jsonify({'success': False, 'error': 'No quote data found for this ticker'})
+            
+        if not profile:
+            return jsonify({'success': False, 'error': 'No company profile found for this ticker'})
         
         # Calculate change percentage
+        if 'c' not in quote or 'pc' not in quote:
+            return jsonify({'success': False, 'error': 'Invalid quote data received'})
+            
         change = ((quote['c'] - quote['pc']) / quote['pc']) * 100
         
-        # Create stock data
+        # Create stock data with safe defaults
         stock_data = {
             'name': profile.get('name', ticker),
-            'last_price': quote['c'],
+            'last_price': quote.get('c', 0),
             'change': change,
             'market_cap': profile.get('marketCapitalization', 0),
-            'volume': quote['v'],
+            'volume': quote.get('v', 0),
             'pe_ratio': profile.get('pe', 0),
             'dividend_yield': profile.get('dividendYield', 0)
         }
@@ -136,6 +145,7 @@ def add_stock():
         
     except Exception as e:
         logger.error(f"Error adding stock: {str(e)}")
+        logger.error(f"Full error details: {e.__class__.__name__}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/remove_stock', methods=['POST'])
