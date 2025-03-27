@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import json
 import logging
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,10 +23,15 @@ def home():
 @app.route('/add_stock', methods=['POST'])
 def add_stock():
     try:
-        logger.info('Received add_stock request')
+        logger.info('=== Starting add_stock request ===')
         logger.info(f'Request headers: {dict(request.headers)}')
-        logger.info(f'Request data: {request.get_data()}')
+        logger.info(f'Request content type: {request.content_type}')
+        logger.info(f'Raw request data: {request.get_data(as_text=True)}')
         
+        if not request.is_json:
+            logger.error('Request is not JSON')
+            return jsonify({'success': False, 'error': 'Request must be JSON'})
+            
         data = request.get_json()
         logger.info(f'Parsed JSON data: {data}')
         
@@ -62,9 +68,11 @@ def add_stock():
         return jsonify({'success': True, 'stock': tracked_stocks[ticker]})
     except json.JSONDecodeError as e:
         logger.error(f'JSON decode error: {str(e)}')
+        logger.error(f'Traceback: {traceback.format_exc()}')
         return jsonify({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         logger.error(f'Error adding stock: {str(e)}')
+        logger.error(f'Traceback: {traceback.format_exc()}')
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/remove_stock', methods=['POST'])
