@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -14,12 +15,20 @@ def home():
 
 @app.route('/add_stock', methods=['POST'])
 def add_stock():
-    data = request.json
-    ticker = data.get('ticker', '').upper()
-    
     try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+            
+        ticker = data.get('ticker', '').upper()
+        if not ticker:
+            return jsonify({'success': False, 'error': 'Ticker symbol is required'})
+        
         stock = yf.Ticker(ticker)
         info = stock.info
+        
+        if not info:
+            return jsonify({'success': False, 'error': f'Could not find stock with ticker {ticker}'})
         
         # Get basic stock information
         tracked_stocks[ticker] = {
@@ -39,18 +48,26 @@ def add_stock():
 
 @app.route('/remove_stock', methods=['POST'])
 def remove_stock():
-    data = request.json
-    ticker = data.get('ticker', '').upper()
-    
-    if ticker in tracked_stocks:
-        del tracked_stocks[ticker]
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'error': 'Stock not found'})
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+            
+        ticker = data.get('ticker', '').upper()
+        if not ticker:
+            return jsonify({'success': False, 'error': 'Ticker symbol is required'})
+        
+        if ticker in tracked_stocks:
+            del tracked_stocks[ticker]
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Stock not found'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/update_stocks', methods=['GET'])
 def update_stocks():
-    for ticker in tracked_stocks:
-        try:
+    try:
+        for ticker in tracked_stocks:
             stock = yf.Ticker(ticker)
             info = stock.info
             
@@ -60,10 +77,10 @@ def update_stocks():
                 'volume': info.get('regularMarketVolume', 'N/A'),
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
-        except Exception as e:
-            print(f"Error updating {ticker}: {str(e)}")
-    
-    return jsonify({'success': True, 'stocks': tracked_stocks})
+        
+        return jsonify({'success': True, 'stocks': tracked_stocks})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True) 
